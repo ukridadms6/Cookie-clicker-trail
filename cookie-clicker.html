@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cookie Clicker Trail</title>
+    <style>
+      :root {
+        --panel: #1f140f;
+        --panel-2: #2a1c15;
+        --text: #f8e8d2;
+        --accent: #ffc164;
+        --line: #5a3c2b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        color: var(--text);
+        background: radial-gradient(circle at top, #4b2f21 0%, #241710 55%, #120d09 100%);
+      }
+
+      .layout {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(280px, 34%) minmax(280px, 66%);
+      }
+
+      .left-pane {
+        border-right: 2px solid #4a3327;
+        padding: 1rem;
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        gap: 0.75rem;
+        background: linear-gradient(180deg, #2e1d14 0%, #1b120d 100%);
+      }
+
+      .brand {
+        text-align: center;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: clamp(1.2rem, 2vw, 1.8rem);
+      }
+
+      .counter {
+        text-align: center;
+        padding: 0.75rem;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .counter .cookies {
+        font-size: clamp(1.2rem, 4vw, 2rem);
+        font-weight: 700;
+      }
+
+      .counter .cps {
+        color: #ddbfa4;
+      }
+
+      .cookie-zone {
+        display: grid;
+        place-items: center;
+      }
+
+      #cookie-button {
+        width: min(280px, 70vw);
+        aspect-ratio: 1;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: clamp(5rem, 12vw, 8rem);
+        background:
+          radial-gradient(circle at 30% 30%, #ffd89f 0 18%, #d68f46 45%, #a55d22 100%);
+        box-shadow:
+          inset 0 0 0 4px rgba(85, 39, 13, 0.75),
+          0 8px 28px rgba(0, 0, 0, 0.5);
+        transition: transform 0.07s ease;
+      }
+
+      #cookie-button:active {
+        transform: scale(0.94);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+
+      .actions button,
+      .actions a {
+        border: 1px solid #8a5a3b;
+        color: var(--text);
+        background: #55321f;
+        padding: 0.45rem 0.65rem;
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .right-pane {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100vh;
+      }
+
+      .status-bar {
+        border-bottom: 2px solid #4a3327;
+        background: #241710;
+        padding: 0.75rem 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      .pill {
+        background: #3a251a;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.9rem;
+      }
+
+      .shop {
+        padding: 0.8rem;
+        background: repeating-linear-gradient(
+          0deg,
+          #221610,
+          #221610 28px,
+          #261911 28px,
+          #261911 56px
+        );
+      }
+
+      .shop h2 {
+        margin: 0.3rem 0 0.8rem;
+        font-size: 1.2rem;
+      }
+
+      #shop-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .shop-item {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.6rem;
+        display: grid;
+        grid-template-columns: 52px 1fr auto;
+        gap: 0.7rem;
+        align-items: center;
+      }
+
+      .shop-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        font-size: 1.65rem;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+      }
+
+      .shop-info h3,
+      .shop-info p {
+        margin: 0.1rem 0;
+      }
+
+      .owned {
+        font-size: 0.85rem;
+        color: #d0b69f;
+      }
+
+      .buy-button {
+        min-width: 130px;
+        border: 1px solid #9d6a43;
+        background: linear-gradient(180deg, #7d4d2e 0%, #5e3923 100%);
+        color: var(--text);
+        border-radius: 8px;
+        padding: 0.45rem 0.6rem;
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .buy-button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .left-pane {
+          border-right: none;
+          border-bottom: 2px solid #4a3327;
+        }
+
+        .right-pane {
+          min-height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="layout">
+      <section class="left-pane">
+        <div class="brand">
+          <h1>Cookie Clicker Trail</h1>
+        </div>
+        <div class="counter">
+          <div id="cookie-count" class="cookies">0 cookies</div>
+          <div id="cps-count" class="cps">per second: 0</div>
+        </div>
+        <div class="cookie-zone">
+          <button id="cookie-button" aria-label="Bake one cookie">🍪</button>
+        </div>
+        <div class="actions">
+          <a href="cookie-clicker.html" download>Download HTML</a>
+          <button id="save-button" type="button">Save</button>
+          <button id="load-button" type="button">Load</button>
+          <button id="reset-button" type="button">Reset</button>
+        </div>
+      </section>
+
+      <section class="right-pane">
+        <header class="status-bar">
+          <span class="pill" id="cpc-count">Cookies / click: 1</span>
+          <span class="pill" id="buildings-owned">Buildings owned: 0</span>
+        </header>
+
+        <section class="shop">
+          <h2>Store</h2>
+          <ul id="shop-list"></ul>
+        </section>
+      </section>
+    </main>
+
+    <template id="shop-item-template">
+      <li class="shop-item">
+        <div class="shop-icon"></div>
+        <div class="shop-info">
+          <h3 class="item-name"></h3>
+          <p class="item-description"></p>
+          <p class="owned item-owned"></p>
+        </div>
+        <button class="buy-button"></button>
+      </li>
+    </template>
+
+    <script>
+      const SAVE_KEY = 'cookie-clicker-trail-save-v2';
+
+      const state = {
+        cookies: 0,
+        cookiesPerSecond: 0,
+        cookiesPerClick: 1,
+      };
+
+      const upgrades = [
+        { id: 'cursor', icon: '🖱️', name: 'Cursor', description: '+1 cookie per click', baseCost: 15, cost: 15, scaling: 1.15, owned: 0, apply: () => (state.cookiesPerClick += 1) },
+        { id: 'grandma', icon: '👵', name: 'Grandma', description: '+1 cookie per second', baseCost: 100, cost: 100, scaling: 1.17, owned: 0, apply: () => (state.cookiesPerSecond += 1) },
+        { id: 'farm', icon: '🌾', name: 'Farm', description: '+8 cookies per second', baseCost: 500, cost: 500, scaling: 1.18, owned: 0, apply: () => (state.cookiesPerSecond += 8) },
+        { id: 'mine', icon: '⛏️', name: 'Mine', description: '+35 cookies per second', baseCost: 2200, cost: 2200, scaling: 1.2, owned: 0, apply: () => (state.cookiesPerSecond += 35) },
+        { id: 'factory', icon: '🏭', name: 'Factory', description: '+120 cookies per second', baseCost: 9000, cost: 9000, scaling: 1.22, owned: 0, apply: () => (state.cookiesPerSecond += 120) },
+      ];
+
+      const cookieCount = document.getElementById('cookie-count');
+      const cpsCount = document.getElementById('cps-count');
+      const cpcCount = document.getElementById('cpc-count');
+      const buildingsOwned = document.getElementById('buildings-owned');
+      const cookieButton = document.getElementById('cookie-button');
+      const shopList = document.getElementById('shop-list');
+      const shopTemplate = document.getElementById('shop-item-template');
+      const saveButton = document.getElementById('save-button');
+      const loadButton = document.getElementById('load-button');
+      const resetButton = document.getElementById('reset-button');
+
+      function format(value) {
+        if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+        if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+        if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+        return Math.floor(value).toLocaleString('en-US');
+      }
+
+      function totalOwned() {
+        return upgrades.reduce((sum, u) => sum + u.owned, 0);
+      }
+
+      function recalculateTotals() {
+        state.cookiesPerClick = 1;
+        state.cookiesPerSecond = 0;
+        upgrades.forEach((upgrade) => {
+          for (let i = 0; i < upgrade.owned; i += 1) {
+            upgrade.apply();
+          }
+        });
+      }
+
+      function redraw() {
+        cookieCount.textContent = `${format(state.cookies)} cookies`;
+        cpsCount.textContent = `per second: ${format(state.cookiesPerSecond)}`;
+        cpcCount.textContent = `Cookies / click: ${format(state.cookiesPerClick)}`;
+        buildingsOwned.textContent = `Buildings owned: ${format(totalOwned())}`;
+
+        upgrades.forEach((upgrade) => {
+          const buyButton = document.querySelector(`[data-buy="${upgrade.id}"]`);
+          const ownedLabel = document.querySelector(`[data-owned="${upgrade.id}"]`);
+          if (!buyButton || !ownedLabel) return;
+
+          buyButton.textContent = `Buy ${format(upgrade.cost)}`;
+          buyButton.disabled = state.cookies < upgrade.cost;
+          ownedLabel.textContent = `Owned: ${upgrade.owned}`;
+        });
+      }
+
+      function saveProgress() {
+        const payload = {
+          cookies: state.cookies,
+          upgrades: upgrades.map(({ id, owned, cost }) => ({ id, owned, cost })),
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+      }
+
+      function loadProgress() {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return;
+
+        try {
+          const parsed = JSON.parse(raw);
+          state.cookies = Number(parsed.cookies) || 0;
+          upgrades.forEach((upgrade) => {
+            const incoming = parsed.upgrades?.find((u) => u.id === upgrade.id);
+            upgrade.owned = Math.max(0, Number(incoming?.owned) || 0);
+            upgrade.cost = Math.max(upgrade.baseCost, Number(incoming?.cost) || upgrade.baseCost);
+          });
+          recalculateTotals();
+          redraw();
+        } catch {
+          localStorage.removeItem(SAVE_KEY);
+        }
+      }
+
+      function resetProgress() {
+        state.cookies = 0;
+        upgrades.forEach((upgrade) => {
+          upgrade.owned = 0;
+          upgrade.cost = upgrade.baseCost;
+        });
+        recalculateTotals();
+        localStorage.removeItem(SAVE_KEY);
+        redraw();
+      }
+
+      function buildShop() {
+        upgrades.forEach((upgrade) => {
+          const clone = shopTemplate.content.cloneNode(true);
+          clone.querySelector('.shop-icon').textContent = upgrade.icon;
+          clone.querySelector('.item-name').textContent = upgrade.name;
+          clone.querySelector('.item-description').textContent = upgrade.description;
+
+          const owned = clone.querySelector('.item-owned');
+          owned.dataset.owned = upgrade.id;
+
+          const button = clone.querySelector('.buy-button');
+          button.dataset.buy = upgrade.id;
+          button.addEventListener('click', () => {
+            if (state.cookies < upgrade.cost) return;
+            state.cookies -= upgrade.cost;
+            upgrade.owned += 1;
+            upgrade.apply();
+            upgrade.cost = Math.ceil(upgrade.cost * upgrade.scaling);
+            redraw();
+          });
+
+          shopList.append(clone);
+        });
+      }
+
+      cookieButton.addEventListener('click', () => {
+        state.cookies += state.cookiesPerClick;
+        redraw();
+      });
+      saveButton.addEventListener('click', saveProgress);
+      loadButton.addEventListener('click', loadProgress);
+      resetButton.addEventListener('click', resetProgress);
+
+      setInterval(() => {
+        if (state.cookiesPerSecond <= 0) return;
+        state.cookies += state.cookiesPerSecond;
+        redraw();
+      }, 1000);
+
+      buildShop();
+      loadProgress();
+      redraw();
+    </script>
+  </body>
+</html>
