@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cookie Clicker Trail - Standalone</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top, #ffe8c2, #f5bb6a 55%, #ce7f2d);
+        color: #301700;
+      }
+
+      .game {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 1.5rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      header,
+      .stats article,
+      .shop,
+      .play-area,
+      .controls {
+        background: rgba(255, 255, 255, 0.78);
+        border-radius: 14px;
+        padding: 1rem;
+      }
+
+      header h1 {
+        margin: 0 0 0.4rem;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+      }
+
+      #cookie-count,
+      #cps-count,
+      #cpc-count {
+        font-size: 2rem;
+        font-weight: 800;
+        margin: 0;
+      }
+
+      .play-area {
+        text-align: center;
+      }
+
+      #cookie-button {
+        border: none;
+        font-size: clamp(5rem, 18vw, 8rem);
+        cursor: pointer;
+        background: transparent;
+        transition: transform 0.07s ease;
+      }
+
+      #cookie-button:active {
+        transform: scale(0.9);
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .controls button,
+      .controls a,
+      .buy-button {
+        border: none;
+        border-radius: 8px;
+        padding: 0.65rem 0.9rem;
+        cursor: pointer;
+        font-weight: 700;
+        min-width: 128px;
+        text-align: center;
+        text-decoration: none;
+        background: #7a3d0f;
+        color: #fff;
+      }
+
+      .danger {
+        background: #963535;
+      }
+
+      .shop h2 {
+        margin-top: 0;
+      }
+
+      #shop-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.8rem;
+      }
+
+      .shop-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        border: 1px solid rgba(45, 20, 0, 0.2);
+        border-radius: 10px;
+        padding: 0.75rem;
+      }
+
+      .shop-item h3,
+      .shop-item p {
+        margin: 0.2rem 0;
+      }
+
+      .buy-button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          color: #ffe9ce;
+        }
+
+        header,
+        .stats article,
+        .shop,
+        .play-area,
+        .controls {
+          background: rgba(20, 10, 0, 0.72);
+        }
+
+        .shop-item {
+          border-color: rgba(255, 230, 208, 0.2);
+        }
+
+        .controls button,
+        .controls a,
+        .buy-button {
+          background: #f7be79;
+          color: #231000;
+        }
+
+        .danger {
+          background: #cc7a7a;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="game">
+      <header>
+        <h1>🍪 Cookie Clicker Trail</h1>
+        <p>Single-file game: open this file directly or download it below.</p>
+      </header>
+
+      <section class="stats">
+        <article>
+          <h2>Cookies</h2>
+          <p id="cookie-count">0</p>
+        </article>
+        <article>
+          <h2>Cookies / second</h2>
+          <p id="cps-count">0</p>
+        </article>
+        <article>
+          <h2>Cookies / click</h2>
+          <p id="cpc-count">1</p>
+        </article>
+      </section>
+
+      <section class="play-area">
+        <button id="cookie-button" aria-label="Bake one cookie">🍪</button>
+      </section>
+
+      <section class="controls">
+        <a href="cookie-clicker.html" download>Download HTML</a>
+        <button id="save-button" type="button">Save progress</button>
+        <button id="load-button" type="button">Load progress</button>
+        <button id="reset-button" class="danger" type="button">Reset</button>
+      </section>
+
+      <section class="shop">
+        <h2>Shop</h2>
+        <ul id="shop-list"></ul>
+      </section>
+    </main>
+
+    <template id="shop-item-template">
+      <li class="shop-item">
+        <div>
+          <h3 class="item-name"></h3>
+          <p class="item-description"></p>
+          <p class="item-owned"></p>
+        </div>
+        <button class="buy-button"></button>
+      </li>
+    </template>
+
+    <script>
+      const SAVE_KEY = 'cookie-clicker-trail-save-v1';
+
+      const state = {
+        cookies: 0,
+        cookiesPerSecond: 0,
+        cookiesPerClick: 1,
+      };
+
+      const upgrades = [
+        {
+          id: 'cursor',
+          name: 'Cursed Cursor',
+          description: '+1 cookie per click',
+          baseCost: 15,
+          cost: 15,
+          scaling: 1.2,
+          owned: 0,
+          apply() {
+            state.cookiesPerClick += 1;
+          },
+        },
+        {
+          id: 'grandma',
+          name: 'Grandma Wagon',
+          description: '+1 cookie per second',
+          baseCost: 50,
+          cost: 50,
+          scaling: 1.25,
+          owned: 0,
+          apply() {
+            state.cookiesPerSecond += 1;
+          },
+        },
+        {
+          id: 'farm',
+          name: 'Chocolate Farm',
+          description: '+4 cookies per second',
+          baseCost: 220,
+          cost: 220,
+          scaling: 1.3,
+          owned: 0,
+          apply() {
+            state.cookiesPerSecond += 4;
+          },
+        },
+        {
+          id: 'factory',
+          name: 'Biscuit Factory',
+          description: '+10 cookies per second',
+          baseCost: 800,
+          cost: 800,
+          scaling: 1.33,
+          owned: 0,
+          apply() {
+            state.cookiesPerSecond += 10;
+          },
+        },
+      ];
+
+      const cookieCount = document.getElementById('cookie-count');
+      const cpsCount = document.getElementById('cps-count');
+      const cpcCount = document.getElementById('cpc-count');
+      const cookieButton = document.getElementById('cookie-button');
+      const shopList = document.getElementById('shop-list');
+      const shopTemplate = document.getElementById('shop-item-template');
+      const saveButton = document.getElementById('save-button');
+      const loadButton = document.getElementById('load-button');
+      const resetButton = document.getElementById('reset-button');
+
+      function format(value) {
+        return new Intl.NumberFormat('en-US', {
+          maximumFractionDigits: value < 100 ? 1 : 0,
+        }).format(value);
+      }
+
+      function recalculateTotals() {
+        state.cookiesPerClick = 1;
+        state.cookiesPerSecond = 0;
+
+        upgrades.forEach((upgrade) => {
+          for (let i = 0; i < upgrade.owned; i += 1) {
+            upgrade.apply();
+          }
+        });
+      }
+
+      function redraw() {
+        cookieCount.textContent = format(state.cookies);
+        cpsCount.textContent = format(state.cookiesPerSecond);
+        cpcCount.textContent = format(state.cookiesPerClick);
+
+        upgrades.forEach((upgrade) => {
+          const buyButton = document.querySelector(`[data-buy="${upgrade.id}"]`);
+          const owned = document.querySelector(`[data-owned="${upgrade.id}"]`);
+          if (!buyButton || !owned) {
+            return;
+          }
+
+          buyButton.textContent = `Buy (${format(upgrade.cost)})`;
+          buyButton.disabled = state.cookies < upgrade.cost;
+          owned.textContent = `Owned: ${upgrade.owned}`;
+        });
+      }
+
+      function saveProgress() {
+        const payload = {
+          cookies: state.cookies,
+          upgrades: upgrades.map((u) => ({ id: u.id, owned: u.owned, cost: u.cost })),
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+      }
+
+      function loadProgress() {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) {
+          return;
+        }
+
+        const parsed = JSON.parse(raw);
+        state.cookies = Number(parsed.cookies) || 0;
+
+        upgrades.forEach((upgrade) => {
+          const incoming = parsed.upgrades?.find((u) => u.id === upgrade.id);
+          upgrade.owned = Number(incoming?.owned) || 0;
+          upgrade.cost = Number(incoming?.cost) || upgrade.baseCost;
+        });
+
+        recalculateTotals();
+        redraw();
+      }
+
+      function resetProgress() {
+        state.cookies = 0;
+        upgrades.forEach((upgrade) => {
+          upgrade.owned = 0;
+          upgrade.cost = upgrade.baseCost;
+        });
+        recalculateTotals();
+        localStorage.removeItem(SAVE_KEY);
+        redraw();
+      }
+
+      function buildShop() {
+        upgrades.forEach((upgrade) => {
+          const clone = shopTemplate.content.cloneNode(true);
+          clone.querySelector('.item-name').textContent = upgrade.name;
+          clone.querySelector('.item-description').textContent = upgrade.description;
+
+          const owned = clone.querySelector('.item-owned');
+          owned.dataset.owned = upgrade.id;
+
+          const button = clone.querySelector('.buy-button');
+          button.dataset.buy = upgrade.id;
+          button.addEventListener('click', () => {
+            if (state.cookies < upgrade.cost) {
+              return;
+            }
+
+            state.cookies -= upgrade.cost;
+            upgrade.owned += 1;
+            upgrade.apply();
+            upgrade.cost = Math.ceil(upgrade.cost * upgrade.scaling);
+            redraw();
+          });
+
+          shopList.append(clone);
+        });
+      }
+
+      cookieButton.addEventListener('click', () => {
+        state.cookies += state.cookiesPerClick;
+        redraw();
+      });
+
+      saveButton.addEventListener('click', saveProgress);
+      loadButton.addEventListener('click', loadProgress);
+      resetButton.addEventListener('click', resetProgress);
+
+      setInterval(() => {
+        if (state.cookiesPerSecond <= 0) {
+          return;
+        }
+        state.cookies += state.cookiesPerSecond;
+        redraw();
+      }, 1000);
+
+      buildShop();
+      loadProgress();
+      redraw();
+    </script>
+  </body>
+</html>
