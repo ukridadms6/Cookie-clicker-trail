@@ -1,0 +1,1 @@
+Cookie Clicker Trial is a development experiment designed to evaluate how effectively ChatGPT Codex can be used to create a functional clone of the game Cookie Clicker, including its core mechanics, user interactions, and incremental progression systems. 
